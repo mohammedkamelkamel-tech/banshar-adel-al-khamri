@@ -16,10 +16,45 @@ jobs:
           cp -a "$PROJECT_DIR"/. .
       - name: Apply vehicle type and reminder changes
         run: |
-          python3 -c 'from pathlib import Path; import re; p=Path("app/src/main/res/layout/activity_customer.xml"); s=p.read_text(); s=s.replace("<EditText android:id=\"@+id/vehicle\" android:layout_width=\"match_parent\" android:layout_height=\"wrap_content\" android:hint=\"السيارة / الموديل\"/>","<Spinner android:id=\"@+id/vehicleType\" android:layout_width=\"match_parent\" android:layout_height=\"wrap_content\"/>\\n<EditText android:id=\"@+id/vehicle\" android:layout_width=\"match_parent\" android:layout_height=\"wrap_content\" android:hint=\"الماركة / الموديل\"/>",1); p.write_text(s)'
-          python3 -c 'from pathlib import Path; p=Path("app/src/main/java/com/adel/banshar/CustomerActivity.kt"); s=p.read_text(); s=s.replace("private lateinit var name: EditText; private lateinit var phone: EditText; private lateinit var vehicle: EditText; private lateinit var oilType: EditText","private lateinit var name: EditText; private lateinit var phone: EditText; private lateinit var vehicleType: Spinner; private lateinit var vehicle: EditText; private lateinit var oilType: EditText",1); s=s.replace("name=findViewById(R.id.name); phone=findViewById(R.id.phone); vehicle=findViewById(R.id.vehicle); oilType=findViewById(R.id.oilType);","name=findViewById(R.id.name); phone=findViewById(R.id.phone); vehicleType=findViewById(R.id.vehicleType); vehicle=findViewById(R.id.vehicle); oilType=findViewById(R.id.oilType);\\n        val vehicleTypes=arrayOf(\"اختر نوع المركبة\",\"سيارة\",\"دراجة نارية\"); vehicleType.adapter=ArrayAdapter(this,android.R.layout.simple_spinner_dropdown_item,vehicleTypes)",1); s=s.replace("private fun reminderMessage()=\"مرحباً ${name.text}، حان موعد تغيير الزيت لسيارتك. بنشر عادل الخامري - فروة. نسعد بخدمتك.\"","private fun reminderMessage():String = if(vehicleType.selectedItem?.toString()==\"دراجة نارية\") \"حان موعد تغيير زيت الدراجة النارية 🛢️🏍️\\\\nحياكم الله في بنشر عادل الخامري – فروة، ونتشرف بزيارتكم 🌷\" else \"حان موعد تغيير زيت سيارتكم 🛢️🚗\\\\nحياكم الله في بنشر عادل الخامري – فروة، ونشرف بزيارتكم 🌷\"",1); s=s.replace("private fun fill(c:Customer){name.setText(c.name);phone.setText(c.phone);vehicle.setText(c.vehicle);oilType.setText(c.oilType);days.setText(c.days.toString());oilImagePath=c.oilImagePath;showOilImage();showRemaining()}","private fun fill(c:Customer){name.setText(c.name);phone.setText(c.phone);val moto=c.vehicle.contains(\"دراجة نارية\")||c.vehicle.contains(\"دباب\")||c.vehicle.contains(\"نارية\");vehicleType.setSelection(if(moto) 2 else 1);vehicle.setText(c.vehicle.removePrefix(\"دراجة نارية - \").removePrefix(\"سيارة - \"));oilType.setText(c.oilType);days.setText(c.days.toString());oilImagePath=c.oilImagePath;showOilImage();showRemaining()}",1); s=s.replace("if(name.text.toString().trim().isEmpty()){name.error=\"اكتب اسم العميل\";return}","if(name.text.toString().trim().isEmpty()){name.error=\"اكتب اسم العميل\";return}\\n        if(vehicleType.selectedItemPosition<=0){Toast.makeText(this,\"اختر نوع المركبة: سيارة أو دراجة نارية\",Toast.LENGTH_SHORT).show();return}\\n        val type=vehicleType.selectedItem.toString().trim()",1); s=s.replace("vehicle=vehicle.text.toString().trim(),","vehicle=if(vehicle.text.toString().trim().isBlank()) type else \"$type - \"+vehicle.text.toString().trim(),",1); p.write_text(s)'
-          python3 -c 'from pathlib import Path; p=Path("app/src/main/java/com/adel/banshar/ReminderReceiver.kt"); s=p.read_text(); s=s.replace("val msg = \"مرحباً ${c.name}، حان موعد تغيير الزيت لسيارتك. بنشر عادل الخامري - فروة. نسعد بخدمتك.\"","val isMotorcycle=c.vehicle.contains(\"دراجة نارية\")||c.vehicle.contains(\"دباب\")||c.vehicle.contains(\"نارية\")\\n        val msg=if(isMotorcycle) \"حان موعد تغيير زيت الدراجة النارية 🛢️🏍️\\\\nحياكم الله في بنشر عادل الخامري – فروة، ونتشرف بزيارتكم 🌷\" else \"حان موعد تغيير زيت سيارتكم 🛢️🚗\\\\nحياكم الله في بنشر عادل الخامري – فروة، ونشرف بزيارتكم 🌷\"",1); p.write_text(s)'
-          python3 -c 'from pathlib import Path; p=Path("app/build.gradle.kts"); s=p.read_text().replace("versionCode = 1","versionCode = 3").replace("versionName = \"1.0\"","versionName = \"1.2.0\""); p.write_text(s)'
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          nl=chr(10)
+
+          p=Path("app/src/main/res/layout/activity_customer.xml")
+          s=p.read_text(encoding="utf-8")
+          old='<EditText android:id="@+id/vehicle" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="السيارة / الموديل"/>'
+          new='<Spinner android:id="@+id/vehicleType" android:layout_width="match_parent" android:layout_height="wrap_content"/>'+nl+'<EditText android:id="@+id/vehicle" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="الماركة / الموديل"/>'
+          if old not in s: raise SystemExit("vehicle XML not found")
+          p.write_text(s.replace(old,new,1),encoding="utf-8")
+
+          p=Path("app/src/main/java/com/adel/banshar/CustomerActivity.kt")
+          s=p.read_text(encoding="utf-8")
+          s=s.replace("private lateinit var name: EditText; private lateinit var phone: EditText; private lateinit var vehicle: EditText; private lateinit var oilType: EditText","private lateinit var name: EditText; private lateinit var phone: EditText; private lateinit var vehicleType: Spinner; private lateinit var vehicle: EditText; private lateinit var oilType: EditText",1)
+          s=s.replace("name=findViewById(R.id.name); phone=findViewById(R.id.phone); vehicle=findViewById(R.id.vehicle); oilType=findViewById(R.id.oilType); days=findViewById(R.id.days);","name=findViewById(R.id.name); phone=findViewById(R.id.phone); vehicleType=findViewById(R.id.vehicleType); vehicle=findViewById(R.id.vehicle); oilType=findViewById(R.id.oilType); days=findViewById(R.id.days);",1)
+          anchor="oilImage=findViewById(R.id.oilImage)"
+          s=s.replace(anchor,anchor+nl+'        val vehicleTypes=arrayOf("اختر نوع المركبة","سيارة","دراجة نارية")'+nl+"        vehicleType.adapter=ArrayAdapter(this,android.R.layout.simple_spinner_dropdown_item,vehicleTypes)",1)
+
+          old='        val daysValue=(days.text.toString().toIntOrNull()?:30).coerceAtLeast(1)'+nl+'        val last=existing?.lastDate?.ifBlank{today()}?:today(); val next=dateAfter(last,daysValue)'+nl+'        val c=Customer(id=customerId,name=name.text.toString().trim(),phone=phone.text.toString().trim(),vehicle=vehicle.text.toString().trim(),oilType=oilType.text.toString().trim(),oilImagePath=oilImagePath,remaining=existing?.remaining?:0.0,paid=existing?.paid?:0.0,days=daysValue,lastDate=last,nextDate=next)'
+          new='        if(vehicleType.selectedItemPosition<=0){Toast.makeText(this,"اختر نوع المركبة: سيارة أو دراجة نارية",Toast.LENGTH_SHORT).show();return}'+nl+'        val type=vehicleType.selectedItem.toString().trim()'+nl+'        val daysValue=(days.text.toString().toIntOrNull()?:30).coerceAtLeast(1)'+nl+'        val last=existing?.lastDate?.ifBlank{today()}?:today(); val next=dateAfter(last,daysValue)'+nl+'        val model=vehicle.text.toString().trim(); val vehicleValue=if(model.isBlank()) type else "$type - $model"'+nl+'        val c=Customer(id=customerId,name=name.text.toString().trim(),phone=phone.text.toString().trim(),vehicle=vehicleValue,oilType=oilType.text.toString().trim(),oilImagePath=oilImagePath,remaining=existing?.remaining?:0.0,paid=existing?.paid?:0.0,days=daysValue,lastDate=last,nextDate=next)'
+          if old not in s: raise SystemExit("save block not found")
+          s=s.replace(old,new,1)
+
+          s=re.sub(r'    private fun fill\(c:Customer\)\{.*?\}', '    private fun fill(c:Customer){name.setText(c.name);phone.setText(c.phone);val moto=c.vehicle.contains("دراجة نارية")||c.vehicle.contains("دباب")||c.vehicle.contains("نارية")||c.vehicle.contains("موتور")||c.vehicle.contains("موتوسيكل");vehicleType.setSelection(if(moto) 2 else 1);vehicle.setText(c.vehicle.removePrefix("دراجة نارية - ").removePrefix("سيارة - "));oilType.setText(c.oilType);days.setText(c.days.toString());oilImagePath=c.oilImagePath;showOilImage();showRemaining()}', s, count=1)
+
+          s=re.sub(r'    private fun reminderMessage\(\)=.*', '    private fun reminderMessage()=if(vehicleType.selectedItem?.toString()=="دراجة نارية") "حان موعد تغيير زيت الدراجة النارية 🛢️🏍️\\nحياكم الله في بنشر عادل الخامري – فروة، ونتشرف بزيارتكم 🌷" else "حان موعد تغيير زيت سيارتكم 🛢️🚗\\nحياكم الله في بنشر عادل الخامري – فروة، ونشرف بزيارتكم 🌷"', s, count=1)
+          p.write_text(s,encoding="utf-8")
+
+          p=Path("app/src/main/java/com/adel/banshar/ReminderReceiver.kt")
+          s=p.read_text(encoding="utf-8")
+          s=re.sub(r'        val msg = "مرحباً .*? نسعد بخدمتك\."', '        val isMotorcycle=c.vehicle.contains("دراجة نارية")||c.vehicle.contains("دباب")||c.vehicle.contains("نارية")||c.vehicle.contains("موتور")||c.vehicle.contains("موتوسيكل")'+nl+'        val msg=if(isMotorcycle) "حان موعد تغيير زيت الدراجة النارية 🛢️🏍️\\nحياكم الله في بنشر عادل الخامري – فروة، ونتشرف بزيارتكم 🌷" else "حان موعد تغيير زيت سيارتكم 🛢️🚗\\nحياكم الله في بنشر عادل الخامري – فروة، ونشرف بزيارتكم 🌷"', s, count=1)
+          p.write_text(s,encoding="utf-8")
+
+          p=Path("app/build.gradle.kts")
+          s=p.read_text(encoding="utf-8").replace("versionCode = 1","versionCode = 3").replace('versionName = "1.0"','versionName = "1.2.0"')
+          p.write_text(s,encoding="utf-8")
+          PY
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
