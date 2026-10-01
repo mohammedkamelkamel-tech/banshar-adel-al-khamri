@@ -15,7 +15,11 @@ p.write_text(s,encoding="utf-8")
 
 p=root/"app/src/main/java/com/adel/banshar/CustomerActivity.kt"
 s=p.read_text(encoding="utf-8")
-s=s.replace('; private lateinit var oilType: EditText; private lateinit var serviceType: Spinner','; private lateinit var oilType: EditText')
+# Fix duplicate AlertDialog imports and keep the existing payment dialog working.
+s=s.replace("import android.app.AlertDialog\n","")
+if "import androidx.appcompat.app.AlertDialog\n" not in s:
+    s=s.replace("import androidx.appcompat.app.AppCompatActivity\n","import androidx.appcompat.app.AlertDialog\nimport androidx.appcompat.app.AppCompatActivity\n")
+
 s=s.replace('    private val serviceOptions = arrayOf("تغيير زيت", "سرويس", "تغيير زيت وسرويس", "فحص وصيانة", "إصلاح بنشر", "خدمة أخرى")\n','')
 s=s.replace('serviceType=findViewById(R.id.serviceType); serviceType.adapter=ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, serviceOptions); ','')
 s=s.replace('type=findViewById(R.id.serviceType); ','')
@@ -93,7 +97,7 @@ s=s.replace('        if (oldVersion < 6) createFinanceTables(db)\n', '        if
 p.write_text(s,encoding="utf-8")
 
 p=root/"app/build.gradle.kts"
-s=p.read_text(encoding="utf-8").replace('versionCode = 14','versionCode = 15').replace('versionName = "1.4.0"','versionName = "1.5.0"')
+s=p.read_text(encoding="utf-8").replace('versionCode = 15','versionCode = 15').replace('versionName = "1.5.0"','versionName = "1.5.0"')
 p.write_text(s,encoding="utf-8")
 
 p=root/"app/src/main/java/com/adel/banshar/MainActivity.kt"
