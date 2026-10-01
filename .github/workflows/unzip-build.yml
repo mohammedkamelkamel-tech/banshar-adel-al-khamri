@@ -31,8 +31,14 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          p = Path("extracted/app/src/main/java/com/adel/banshar/CustomerActivity.kt")
-          s = p.read_text(encoding="utf-8")
+          paths = [
+              Path("extracted/app/src/main/java/com/adel/banshar/CustomerActivity.kt"),
+              Path("app/src/main/java/com/adel/banshar/CustomerActivity.kt"),
+          ]
+          for p in paths:
+              if not p.exists():
+                  continue
+              s = p.read_text(encoding="utf-8")
           if "import android.content.DialogInterface" not in s:
               s = s.replace("import android.content.Intent", "import android.content.DialogInterface\nimport android.content.Intent", 1)
           if "import androidx.appcompat.app.AlertDialog" not in s:
