@@ -13,53 +13,53 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Prepare v10 source
+      - name: Find latest project ZIP
         run: |
-          if [ -f banshar-adel-al-khamri-project-v10.zip ]; then
-            ZIP=banshar-adel-al-khamri-project-v10.zip
-          else
-            curl -L --fail --retry 3 'https://sdmntprnortheu.oaiusercontent.com/files/00000000-fe58-8210-afc8-0c1eb8475ea4d/raw?se=2026-10-01T05%3A47%3A07Z&sp=r&sv=2026-02-06&sr=b&scid=e2cecc3f-1988-5bcf-befd-ad4d18999c41&skoid=9b41a688-1b44-4731-856e-b0efcf3660ed&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-10-01T01%3A48%3A12Z&ske=2026-10-02T01%3A48%3A12Z&sks=b&skv=2026-02-06&sig=XlbXFhldaqv9YFjEuX/wcQGSwn1T6YDlucrVdf6A2aQ%3D' -o v10.zip
-            ZIP=v10.zip
-          fi
-          mkdir -p extracted
+          if [ -f banshar-adel-al-khamri-project-v9.zip ]; then ZIP=banshar-adel-al-khamri-project-v9.zip; else ZIP=$(for f in $(ls -t *.zip); do unzip -tq "$f" >/dev/null 2>&1 && { echo "$f"; break; }; done); fi
+          test -n "$ZIP"
+          mkdir extracted
           unzip -q "$ZIP" -d extracted
           PROJECT_DIR=$(find extracted -name settings.gradle.kts -type f -print -quit | xargs dirname)
           cp -a "$PROJECT_DIR"/. .
-          echo "Using project: $PROJECT_DIR"
-
-      - name: Build project archive
+      - name: Fix CustomerActivity compile errors
         run: |
-          rm -f banshar-adel-al-khamri-project-v10.zip
-          (cd extracted && zip -qr ../banshar-adel-al-khamri-project-v10.zip .)
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("app/src/main/java/com/adel/banshar/CustomerActivity.kt")
+          if p.exists():
+              s=p.read_text(encoding="utf-8")
+              if "import android.content.DialogInterface" not in s: s=s.replace("import android.content.Intent","import android.content.DialogInterface\nimport android.content.Intent",1)
+              if "import androidx.appcompat.app.AlertDialog" not in s: s=s.replace("import androidx.appcompat.app.AppCompatActivity","import androidx.appcompat.app.AlertDialog\nimport androidx.appcompat.app.AppCompatActivity",1)
+              s=s.replace('.setPositiveButton("حفظ") { _, _ ->','.setPositiveButton("حفظ") { _: DialogInterface, _: Int ->',1)
+              p.write_text(s,encoding="utf-8")
+          PY
+      - name: Prepare v9 project archive
+        run: |
+          rm -f banshar-adel-al-khamri-project-v9.zip
+          (cd extracted && zip -qr ../banshar-adel-al-khamri-project-v9.zip .)
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add banshar-adel-al-khamri-project-v10.zip
-          git commit -m "Publish v10 professional project [skip ci]" || true
+          git add banshar-adel-al-khamri-project-v9.zip
+          git commit -m "Publish v9 project [skip ci]" || true
           git push
-
-      - name: Upload extracted source
+      - name: Upload extracted source for inspection
         uses: actions/upload-artifact@v4
         with:
-          name: banshar-adel-al-khamri-v10-source
+          name: extracted-source-inspection
           path: extracted
-
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
-
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
-
       - name: Build APK
         run: gradle assembleDebug
-
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: banshar-adel-al-khamri-v10-apk
+          name: banshar-adel-al-khamri-apk
           path: app/build/outputs/apk/debug/app-debug.apk
