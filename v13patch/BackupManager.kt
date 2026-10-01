@@ -31,12 +31,14 @@ object BackupManager {
    if(ok){c.getSharedPreferences(P,0).edit().putString("last",SimpleDateFormat("yyyy-MM-dd HH:mm",Locale.US).format(Date())).apply();cleanup(c)};ok
   }catch(_:Exception){false}finally{tmp.delete()}
  }
- fun restore(c:Context,u:Uri):Boolean=try{
-  val db=Db(c);db.close();val f=c.getDatabasePath("banshar.db");val t=File(c.cacheDir,"restore.db")
-  c.contentResolver.openInputStream(u)?.use{i->t.outputStream().use{o->i.copyTo(o)}}?:return false
-  if(!t.exists()||t.length()==0L)return false
-  t.copyTo(f,true);t.delete();File(f.absolutePath+"-wal").delete();File(f.absolutePath+"-shm").delete();true
- }catch(_:Exception){false}
+ fun restore(c:Context,u:Uri):Boolean {
+  return try {
+   val db=Db(c);db.close();val f=c.getDatabasePath("banshar.db");val t=File(c.cacheDir,"restore.db")
+   c.contentResolver.openInputStream(u)?.use{i->t.outputStream().use{o->i.copyTo(o)}} ?: return false
+   if(!t.exists()||t.length()==0L)return false
+   t.copyTo(f,true);t.delete();File(f.absolutePath+"-wal").delete();File(f.absolutePath+"-shm").delete();true
+  } catch(_:Exception){false}
+ }
  private fun cleanup(c:Context){if(Build.VERSION.SDK_INT<Build.VERSION_CODES.Q)return;try{
   val u=MediaStore.Downloads.EXTERNAL_CONTENT_URI;val ids=mutableListOf<Long>()
   c.contentResolver.query(u,arrayOf("_id",MediaStore.MediaColumns.DISPLAY_NAME),"\${MediaStore.MediaColumns.RELATIVE_PATH}=?",arrayOf(Environment.DIRECTORY_DOWNLOADS+"/بنشر عادل الخامري/نسخ احتياطية/"),"\${MediaStore.MediaColumns.DATE_MODIFIED} DESC")?.use{x->while(x.moveToNext()){val n=x.getString(1)?:"";if(n.startsWith("banshar-adel-backup-")&&n.endsWith(".db"))ids+=x.getLong(0)}}
