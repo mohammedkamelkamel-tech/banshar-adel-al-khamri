@@ -80,7 +80,7 @@ jobs:
           import android.content.Intent
           class BackupReceiver : BroadcastReceiver() {
               override fun onReceive(context: Context, intent: Intent?) {
-                  BackupManager.createBackup(context)
+                  if (intent?.action != Intent.ACTION_BOOT_COMPLETED) BackupManager.createBackup(context)
                   BackupScheduler.schedule(context)
               }
           }
@@ -126,7 +126,11 @@ jobs:
 
           manifest=Path("app/src/main/AndroidManifest.xml")
           s=manifest.read_text(encoding="utf-8")
-          s=s.replace('<receiver android:name=".ReminderReceiver" android:exported="false" />','<receiver android:name=".ReminderReceiver" android:exported="false" />'+chr(10)+'        <receiver android:name=".BackupReceiver" android:exported="false" />',1)
+          s=s.replace('<receiver android:name=".ReminderReceiver" android:exported="false" />','<receiver android:name=".ReminderReceiver" android:exported="false" />'+chr(10)+'        <receiver android:name=".BackupReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>',1)
           manifest.write_text(s,encoding="utf-8")
 
           gradle=Path("app/build.gradle.kts")
