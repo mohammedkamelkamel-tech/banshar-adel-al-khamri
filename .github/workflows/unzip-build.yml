@@ -121,7 +121,10 @@ jobs:
           layout=Path("app/src/main/res/layout/activity_main.xml")
           s=layout.read_text(encoding="utf-8")
           if 'android:id="@+id/btnBackup"' not in s:
-              s=s.replace('<EditText android:id="@+id/search"', '<Button android:id="@+id/btnBackup" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="نسخة احتياطية 💾"/>'+chr(10)+'<EditText android:id="@+id/search"',1)
+              button='<Button android:id="@+id/btnBackup" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="نسخة احتياطية 💾"/>'
+              marker='<EditText android:id="@+id/search"'
+              if marker not in s: raise SystemExit("search field not found")
+              s=s.replace(marker,button+chr(10)+marker,1)
           layout.write_text(s,encoding="utf-8")
 
           manifest=Path("app/src/main/AndroidManifest.xml")
