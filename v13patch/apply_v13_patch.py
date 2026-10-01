@@ -54,3 +54,17 @@ p.write_text(s,encoding="utf-8")
 p=root/"app/build.gradle.kts"
 s=p.read_text(encoding="utf-8").replace('versionCode = 1','versionCode = 13').replace('versionName = "1.0"','versionName = "1.3.0"')
 p.write_text(s,encoding="utf-8")
+
+
+# Final idempotent fixes
+p=root/"app/src/main/res/layout/activity_main.xml"
+s=p.read_text(encoding="utf-8")
+if 'android:id="@+id/btnSettings"' not in s:
+    s=s.replace('<EditText android:id="@+id/search"', '<Button android:id="@+id/btnSettings" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="⚙️ الإعدادات"/>\n<EditText android:id="@+id/search"', 1)
+p.write_text(s,encoding="utf-8")
+
+p=root/"app/src/main/java/com/adel/banshar/MainActivity.kt"
+s=p.read_text(encoding="utf-8")
+if 'REQUEST_RESTORE' not in s:
+    s=s.replace('    private fun showList(items: List<Customer>) {','    companion object { const val REQUEST_RESTORE = 9131 }\n\n    private fun showList(items: List<Customer>) {',1)
+p.write_text(s,encoding="utf-8")
