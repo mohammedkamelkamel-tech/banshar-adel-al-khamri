@@ -27,6 +27,13 @@ jobs:
 
           cp -a "$PROJECT_DIR"/. .
 
+      - name: Inspect CustomerActivity source
+        run: |
+          echo "=== CustomerActivity imports ==="
+          sed -n '1,25p' app/src/main/java/com/adel/banshar/CustomerActivity.kt
+          echo "=== CustomerActivity around failing lines ==="
+          nl -ba app/src/main/java/com/adel/banshar/CustomerActivity.kt | sed -n '90,112p'
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
