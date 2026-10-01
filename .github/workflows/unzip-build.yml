@@ -54,7 +54,7 @@ jobs:
 
           s=s.replace(
               'name=findViewById(R.id.name); phone=findViewById(R.id.phone); vehicle=findViewById(R.id.vehicle); oilType=findViewById(R.id.oilType);',
-              'name=findViewById(R.id.name); phone=findViewById(R.id.phone); vehicleType=findViewById(R.id.vehicleType); vehicle=findViewById(R.id.vehicle); oilType=findViewById(R.id.oilType);\n        val vehicleTypes=arrayOf("سيارة","دراجة نارية"); vehicleType.adapter=ArrayAdapter(this,android.R.layout.simple_spinner_dropdown_item,vehicleTypes)',
+              'name=findViewById(R.id.name); phone=findViewById(R.id.phone); vehicleType=findViewById(R.id.vehicleType); vehicle=findViewById(R.id.vehicle); oilType=findViewById(R.id.oilType);\n        val vehicleTypes=arrayOf("اختر نوع المركبة","سيارة","دراجة نارية"); vehicleType.adapter=ArrayAdapter(this,android.R.layout.simple_spinner_dropdown_item,vehicleTypes)',
               1)
 
           old_save='''    private fun save(){
@@ -69,7 +69,7 @@ jobs:
     }'''
           new_save='''    private fun save(){
         if(name.text.toString().trim().isEmpty()){name.error="اكتب اسم العميل";return}
-        if(vehicleType.selectedItemPosition<0){Toast.makeText(this,"اختر نوع المركبة",Toast.LENGTH_SHORT).show();return}
+        if(vehicleType.selectedItemPosition<=0){Toast.makeText(this,"اختر نوع المركبة: سيارة أو دراجة نارية",Toast.LENGTH_SHORT).show();return}
         val type=vehicleType.selectedItem?.toString()?.trim().orEmpty()
         if(type!="سيارة" && type!="دراجة نارية"){Toast.makeText(this,"اختر نوع المركبة",Toast.LENGTH_SHORT).show();return}
         val daysValue=(days.text.toString().toIntOrNull()?:30).coerceAtLeast(1)
@@ -89,7 +89,7 @@ jobs:
           new_fill='''    private fun fill(c:Customer){
         name.setText(c.name);phone.setText(c.phone)
         val isMotorcycle=c.vehicle.contains("دراجة نارية") || c.vehicle.contains("دباب") || c.vehicle.contains("نارية") || c.vehicle.contains("موتور") || c.vehicle.contains("موتوسيكل")
-        vehicleType.setSelection(if(isMotorcycle) 1 else 0)
+        vehicleType.setSelection(if(isMotorcycle) 2 else 1)
         vehicle.setText(c.vehicle.removePrefix("دراجة نارية - ").removePrefix("سيارة - "))
         oilType.setText(c.oilType);days.setText(c.days.toString());oilImagePath=c.oilImagePath;showOilImage();showRemaining()
     }'''
