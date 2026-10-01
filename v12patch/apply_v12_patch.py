@@ -30,9 +30,9 @@ object AutoBackup {
             val name = "banshar-adel-backup-$stamp.db"
             val ok = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 val values = ContentValues().apply {
-                    put(MediaStore.Downloads.DISPLAY_NAME, name)
-                    put(MediaStore.Downloads.MIME_TYPE, "application/octet-stream")
-                    put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/بنشر عادل الخامري/نسخ احتياطية")
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+                    put(MediaStore.MediaColumns.MIME_TYPE, "application/octet-stream")
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/بنشر عادل الخامري/نسخ احتياطية")
                 }
                 val uri = context.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
                 if (uri == null) false else try {
@@ -70,17 +70,17 @@ object AutoBackup {
         try {
             val resolver = context.contentResolver
             val uri = MediaStore.Downloads.EXTERNAL_CONTENT_URI
-            val projection = arrayOf(MediaStore.Downloads._ID, MediaStore.Downloads.DISPLAY_NAME)
+            val projection = arrayOf("_id", MediaStore.MediaColumns.DISPLAY_NAME)
             val items = mutableListOf<Long>()
-            resolver.query(uri, projection, "${MediaStore.Downloads.RELATIVE_PATH}=?", arrayOf(Environment.DIRECTORY_DOWNLOADS + "/بنشر عادل الخامري/نسخ احتياطية/"), "${MediaStore.Downloads.DATE_MODIFIED} DESC")?.use { c ->
-                val idCol = c.getColumnIndexOrThrow(MediaStore.Downloads._ID)
-                val nameCol = c.getColumnIndexOrThrow(MediaStore.Downloads.DISPLAY_NAME)
+            resolver.query(uri, projection, "${MediaStore.MediaColumns.RELATIVE_PATH}=?", arrayOf(Environment.DIRECTORY_DOWNLOADS + "/بنشر عادل الخامري/نسخ احتياطية/"), "${MediaStore.MediaColumns.DATE_MODIFIED} DESC")?.use { c ->
+                val idCol = c.getColumnIndexOrThrow("_id")
+                val nameCol = c.getColumnIndexOrThrow(MediaStore.MediaColumns.DISPLAY_NAME)
                 while (c.moveToNext()) {
                     val n = c.getString(nameCol) ?: continue
                     if (n.startsWith("banshar-adel-backup-") && n.endsWith(".db")) items += c.getLong(idCol)
                 }
             }
-            items.drop(KEEP).forEach { id -> resolver.delete(uri, "${MediaStore.Downloads._ID}=?", arrayOf(id.toString())) }
+            items.drop(KEEP).forEach { id -> resolver.delete(uri, "${"_id"}=?", arrayOf(id.toString())) }
         } catch (_: Exception) { }
     }
 }
