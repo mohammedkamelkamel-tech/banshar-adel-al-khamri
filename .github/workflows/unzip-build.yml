@@ -119,27 +119,30 @@ jobs:
           main.write_text(s,encoding="utf-8")
 
           layout=Path("app/src/main/res/layout/activity_main.xml")
-          s=layout.read_text(encoding="utf-8")
-          if 'android:id="@+id/btnBackup"' not in s:
-              button='<Button android:id="@+id/btnBackup" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="نسخة احتياطية 💾" android:layout_marginTop="8dp" />'
-              marker='<ListView android:id="@+id/listCustomers"'
-              if marker not in s: raise SystemExit("customer list not found")
-              s=s.replace(marker,button+chr(10)+marker,1)
-          layout.write_text(s,encoding="utf-8")
-
-          main=Path("app/src/main/java/com/adel/banshar/MainActivity.kt")
-          s=main.read_text(encoding="utf-8")
-          if "R.id.btnBackup" not in s:
-              marker='        findViewById<Button>(R.id.btnInventory).setOnClickListener { startActivity(Intent(this, InventoryActivity::class.java)) }'
-              handler='''        findViewById<Button>(R.id.btnBackup).setOnClickListener {
-              val uri = BackupManager.createBackup(this)
-              Toast.makeText(this, if (uri != null) "تم إنشاء النسخة الاحتياطية في التنزيلات" else "تعذر إنشاء النسخة الاحتياطية", Toast.LENGTH_LONG).show()
-          }'''
-              if marker not in s: raise SystemExit("inventory listener not found")
-              s=s.replace(marker,marker+chr(10)+handler,1)
-          if "BackupScheduler.schedule(this)" not in s:
-              s=s.replace("        setContentView(R.layout.activity_main)", "        setContentView(R.layout.activity_main)"+chr(10)+"        BackupScheduler.schedule(this)",1)
-          main.write_text(s,encoding="utf-8")
+          xml='''<?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent" android:layout_height="match_parent"
+              android:orientation="vertical" android:padding="12dp" android:layoutDirection="rtl">
+              <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                  android:text="بنشر عادل الخامري" android:textSize="25sp" android:textStyle="bold"
+                  android:gravity="center" android:padding="10dp"/>
+              <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                  <Button android:id="@+id/btnAdd" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="إضافة عميل"/>
+                  <Button android:id="@+id/btnInventory" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="المخزون"/>
+                  <Button android:id="@+id/btnDue" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="المستحقات"/>
+                  <Button android:id="@+id/btnAll" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="الكل"/>
+              </LinearLayout>
+              <Button android:id="@+id/btnBackup" android:layout_width="match_parent" android:layout_height="wrap_content"
+                  android:layout_marginTop="8dp" android:text="نسخة احتياطية 💾"/>
+              <EditText android:id="@+id/search" android:layout_width="match_parent" android:layout_height="wrap_content"
+                  android:hint="بحث باسم العميل أو رقم الهاتف" android:inputType="text" android:singleLine="true"/>
+              <TextView android:id="@+id/tvSummary" android:layout_width="match_parent" android:layout_height="wrap_content"
+                  android:padding="8dp" android:textSize="16sp"/>
+              <ListView android:id="@+id/listCustomers" android:layout_width="match_parent" android:layout_height="0dp"
+                  android:layout_weight="1" android:dividerHeight="8dp"/>
+          </LinearLayout>
+          '''
+          layout.write_text(xml,encoding="utf-8")
 
           manifest=Path("app/src/main/AndroidManifest.xml")
           s=manifest.read_text(encoding="utf-8")
