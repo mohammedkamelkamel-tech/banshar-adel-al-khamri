@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - "*.zip"
+      - "v12patch/**"
       - ".github/workflows/unzip-build.yml"
 
 jobs:
@@ -13,6 +14,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Find latest project ZIP
         run: |
           ZIP=$(for f in $(ls -t banshar-adel-al-khamri-project-v11.zip banshar-adel-al-khamri-project-v10.zip *.zip 2>/dev/null | awk '!seen[$0]++'); do unzip -tq "$f" >/dev/null 2>&1 && { echo "$f"; break; }; done)
@@ -21,6 +23,7 @@ jobs:
           unzip -q "$ZIP" -d extracted
           PROJECT_DIR=$(find extracted -name settings.gradle.kts -type f -print -quit | xargs dirname)
           cp -a "$PROJECT_DIR"/. .
+
       - name: Fix CustomerActivity compile errors
         run: |
           python3 - <<'PY'
@@ -33,26 +36,32 @@ jobs:
               s=s.replace('.setPositiveButton("حفظ") { _, _ ->','.setPositiveButton("حفظ") { _: DialogInterface, _: Int ->',1)
               p.write_text(s,encoding="utf-8")
           PY
+
+      - name: Apply v12 backup and logo patch
+        run: python3 v12patch/apply_v12_patch.py
+
       - name: Upload extracted source for inspection
         uses: actions/upload-artifact@v4
         with:
           name: extracted-source-inspection
           path: extracted
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
+
       - name: Build APK
         run: gradle assembleDebug
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: banshar-adel-al-khamri-apk
           path: app/build/outputs/apk/debug/app-debug.apk
-
-# trigger build
