@@ -14,45 +14,124 @@ jobs:
           unzip -q banshar-adel-al-khamri-project-v8.zip -d extracted
           PROJECT_DIR=$(find extracted -name settings.gradle.kts -type f -print -quit | xargs dirname)
           cp -a "$PROJECT_DIR"/. .
-      - name: Apply vehicle type and reminder changes
+      - name: Add automatic and manual backup
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
+          backup = r'''package com.adel.banshar
+          import android.content.ContentValues
+          import android.content.Context
+          import android.net.Uri
+          import android.os.Build
+          import android.os.Environment
+          import android.provider.MediaStore
+          import java.io.File
+          import java.io.FileInputStream
+          import java.io.FileOutputStream
+          import java.text.SimpleDateFormat
+          import java.util.Date
+          import java.util.Locale
+          import java.util.zip.ZipEntry
+          import java.util.zip.ZipOutputStream
 
-          p=Path("app/src/main/res/layout/activity_customer.xml")
-          s=p.read_text(encoding="utf-8")
-          old='<EditText android:id="@+id/vehicle" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="السيارة / الموديل"/>'
-          new='''<RadioGroup android:id="@+id/vehicleTypeGroup" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:layoutDirection="rtl">
-          <RadioButton android:id="@+id/vehicleMotorcycle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="دراجة نارية" android:textSize="17sp"/>
-          <RadioButton android:id="@+id/vehicleCar" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="سيارة" android:textSize="17sp"/>
-          </RadioGroup>
-          <EditText android:id="@+id/vehicle" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="الماركة / الموديل"/>'''
-          if old not in s: raise SystemExit("vehicle XML not found")
-          p.write_text(s.replace(old,new,1),encoding="utf-8")
+          object BackupManager {
+              fun createBackup(context: Context): Uri? {
+                  return try {
+                      Db(context).close()
+                      val stamp = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US).format(Date())
+                      val name = "بنشر_عادل_الخامري_نسخة_\${stamp}.zip"
+                      val temp = File(context.cacheDir, name)
+                      ZipOutputStream(FileOutputStream(temp)).use { zip ->
+                          val dbFile = context.getDatabasePath("banshar.db")
+                          if (dbFile.exists()) addFile(zip, dbFile, "banshar.db")
+                          context.filesDir.listFiles().orEmpty().filter { it.isFile }.forEach { addFile(zip, it, "files/\${it.name}") }
+                      }
+                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                          val values = ContentValues().apply {
+                              put(MediaStore.Downloads.DISPLAY_NAME, name)
+                              put(MediaStore.Downloads.MIME_TYPE, "application/zip")
+                              put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/بنشر عادل الخامري/نسخ احتياطية")
+                          }
+                          val uri = context.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: return null
+                          context.contentResolver.openOutputStream(uri)?.use { out -> FileInputStream(temp).use { it.copyTo(out) } }
+                          temp.delete()
+                          return uri
+                      }
+                      val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "بنشر عادل الخامري/نسخ احتياطية")
+                      dir.mkdirs()
+                      val target = File(dir, name)
+                      temp.copyTo(target, overwrite = true)
+                      temp.delete()
+                      Uri.fromFile(target)
+                  } catch (_: Exception) { null }
+              }
+              private fun addFile(zip: ZipOutputStream, file: File, entryName: String) {
+                  zip.putNextEntry(ZipEntry(entryName))
+                  FileInputStream(file).use { it.copyTo(zip) }
+                  zip.closeEntry()
+              }
+          }
+          '''
+          Path("app/src/main/java/com/adel/banshar/BackupManager.kt").write_text(backup, encoding="utf-8")
 
-          p=Path("app/src/main/java/com/adel/banshar/CustomerActivity.kt")
-          s=p.read_text(encoding="utf-8")
-          s=s.replace("private lateinit var name: EditText; private lateinit var phone: EditText; private lateinit var vehicle: EditText; private lateinit var oilType: EditText","private lateinit var name: EditText; private lateinit var phone: EditText; private lateinit var vehicleTypeGroup: RadioGroup; private lateinit var vehicleCar: RadioButton; private lateinit var vehicleMotorcycle: RadioButton; private lateinit var vehicle: EditText; private lateinit var oilType: EditText",1)
-          s=s.replace("name=findViewById(R.id.name); phone=findViewById(R.id.phone); vehicle=findViewById(R.id.vehicle); oilType=findViewById(R.id.oilType);","name=findViewById(R.id.name); phone=findViewById(R.id.phone); vehicleTypeGroup=findViewById(R.id.vehicleTypeGroup); vehicleCar=findViewById(R.id.vehicleCar); vehicleMotorcycle=findViewById(R.id.vehicleMotorcycle); vehicle=findViewById(R.id.vehicle); oilType=findViewById(R.id.oilType);",1)
+          Path("app/src/main/java/com/adel/banshar/BackupReceiver.kt").write_text(r'''package com.adel.banshar
+          import android.content.BroadcastReceiver
+          import android.content.Context
+          import android.content.Intent
+          class BackupReceiver : BroadcastReceiver() {
+              override fun onReceive(context: Context, intent: Intent?) {
+                  BackupManager.createBackup(context)
+                  BackupScheduler.schedule(context)
+              }
+          }
+          ''', encoding="utf-8")
 
-          s=s.replace("        val daysValue=(days.text.toString().toIntOrNull()?:30).coerceAtLeast(1)","        if(vehicleTypeGroup.checkedRadioButtonId==-1){Toast.makeText(this,\"اختر نوع المركبة: سيارة أو دراجة نارية\",Toast.LENGTH_SHORT).show();return}\n        val type=if(vehicleMotorcycle.isChecked) \"دراجة نارية\" else \"سيارة\"\n        val daysValue=(days.text.toString().toIntOrNull()?:30).coerceAtLeast(1)",1)
-          s=s.replace("vehicle=vehicle.text.toString().trim(),","vehicle=if(vehicle.text.toString().trim().isBlank()) type else \"$type - \"+vehicle.text.toString().trim(),",1)
+          Path("app/src/main/java/com/adel/banshar/BackupScheduler.kt").write_text(r'''package com.adel.banshar
+          import android.app.AlarmManager
+          import android.app.PendingIntent
+          import android.content.Context
+          import android.content.Intent
+          import java.util.Calendar
+          object BackupScheduler {
+              fun schedule(context: Context) {
+                  val alarm = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+                  val intent = PendingIntent.getBroadcast(context, 8101, Intent(context, BackupReceiver::class.java), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+                  val cal = Calendar.getInstance().apply {
+                      set(Calendar.HOUR_OF_DAY, 2); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+                      if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1)
+                  }
+                  alarm.setInexactRepeating(AlarmManager.RTC_WAKEUP, cal.timeInMillis, AlarmManager.INTERVAL_DAY, intent)
+              }
+          }
+          ''', encoding="utf-8")
 
-          s=re.sub(r'    private fun fill\(c:Customer\)\{.*?\}', '    private fun fill(c:Customer){name.setText(c.name);phone.setText(c.phone);val moto=c.vehicle.contains("دراجة نارية")||c.vehicle.contains("دباب")||c.vehicle.contains("نارية")||c.vehicle.contains("موتور")||c.vehicle.contains("موتوسيكل");if(moto) vehicleMotorcycle.isChecked=true else vehicleCar.isChecked=true;vehicle.setText(c.vehicle.removePrefix("دراجة نارية - ").removePrefix("سيارة - "));oilType.setText(c.oilType);days.setText(c.days.toString());oilImagePath=c.oilImagePath;showOilImage();showRemaining()}', s, count=1)
+          main=Path("app/src/main/java/com/adel/banshar/MainActivity.kt")
+          s=main.read_text(encoding="utf-8")
+          s=s.replace("setContentView(R.layout.activity_main)", "setContentView(R.layout.activity_main)"+chr(10)+"        BackupScheduler.schedule(this)",1)
+          anchor='findViewById<Button>(R.id.btnInventory).setOnClickListener { startActivity(Intent(this, InventoryActivity::class.java)) }'
+          handler='''findViewById<Button>(R.id.btnBackup).setOnClickListener {
+              db.close()
+              val uri=BackupManager.createBackup(this)
+              db=Db(this)
+              Toast.makeText(this, if(uri!=null) "تم إنشاء النسخة الاحتياطية في مجلد التنزيلات" else "تعذر إنشاء النسخة الاحتياطية", Toast.LENGTH_LONG).show()
+          }'''
+          s=s.replace(anchor,anchor+chr(10)+"        "+handler.replace(chr(10),chr(10)+"        "),1)
+          main.write_text(s,encoding="utf-8")
 
-          s=re.sub(r'    private fun reminderMessage\(\)=.*', '    private fun reminderMessage()=if(vehicleMotorcycle.isChecked) "حان موعد تغيير زيت الدراجة النارية 🛢️🏍️ - حياكم الله في بنشر عادل الخامري – فروة، ونتشرف بزيارتكم 🌷" else "حان موعد تغيير زيت سيارتكم 🛢️🚗 - حياكم الله في بنشر عادل الخامري – فروة، ونشرف بزيارتكم 🌷"', s, count=1)
-          p.write_text(s,encoding="utf-8")
+          layout=Path("app/src/main/res/layout/activity_main.xml")
+          s=layout.read_text(encoding="utf-8")
+          if 'android:id="@+id/btnBackup"' not in s:
+              s=s.replace('<EditText android:id="@+id/search"', '<Button android:id="@+id/btnBackup" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="نسخة احتياطية 💾"/>'+chr(10)+'<EditText android:id="@+id/search"',1)
+          layout.write_text(s,encoding="utf-8")
 
-          p=Path("app/src/main/java/com/adel/banshar/ReminderReceiver.kt")
-          s=p.read_text(encoding="utf-8")
-          s=re.sub(r'(?m)^\s*val isMotorcycle = .*$', '        val isMotorcycle=c.vehicle.contains("دراجة نارية")||c.vehicle.contains("دباب")||c.vehicle.contains("نارية")||c.vehicle.contains("موتور")||c.vehicle.contains("موتوسيكل")', s, count=1)
-          s=re.sub(r'(?m)^\s*val msg = if \(isMotorcycle\) \{.*?^\s*\}', '        val msg=if(isMotorcycle) "حان موعد تغيير زيت الدراجة النارية 🛢️🏍️ - حياكم الله في بنشر عادل الخامري – فروة، ونتشرف بزيارتكم 🌷" else "حان موعد تغيير زيت سيارتكم 🛢️🚗 - حياكم الله في بنشر عادل الخامري – فروة، ونشرف بزيارتكم 🌷"', s, count=1, flags=re.M)
-          p.write_text(s,encoding="utf-8")
+          manifest=Path("app/src/main/AndroidManifest.xml")
+          s=manifest.read_text(encoding="utf-8")
+          s=s.replace('<receiver android:name=".ReminderReceiver" android:exported="false" />','<receiver android:name=".ReminderReceiver" android:exported="false" />'+chr(10)+'        <receiver android:name=".BackupReceiver" android:exported="false" />',1)
+          manifest.write_text(s,encoding="utf-8")
 
-          p=Path("app/build.gradle.kts")
-          s=p.read_text(encoding="utf-8").replace("versionCode = 1","versionCode = 4").replace('versionName = "1.0"','versionName = "1.3.0"')
-          p.write_text(s,encoding="utf-8")
+          gradle=Path("app/build.gradle.kts")
+          s=gradle.read_text(encoding="utf-8").replace("versionCode = 4","versionCode = 5").replace('versionName = "1.3.0"','versionName = "1.4.0"')
+          gradle.write_text(s,encoding="utf-8")
           PY
 
       - name: Setup Java
