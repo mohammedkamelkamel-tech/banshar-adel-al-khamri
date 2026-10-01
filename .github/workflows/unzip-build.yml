@@ -17,7 +17,11 @@ jobs:
 
       - name: Find latest project ZIP
         run: |
-          ZIP=$(for f in $(ls -t *.zip); do unzip -tq "$f" >/dev/null 2>&1 && { echo "$f"; break; }; done)
+          if [ -f banshar-adel-al-khamri-project-v9.zip ]; then
+            ZIP=banshar-adel-al-khamri-project-v9.zip
+          else
+            ZIP=$(for f in $(ls -t *.zip); do unzip -tq "$f" >/dev/null 2>&1 && { echo "$f"; break; }; done)
+          fi
           test -n "$ZIP"
           echo "Using ZIP: $ZIP"
           mkdir extracted
@@ -62,18 +66,18 @@ jobs:
               p.write_text(s, encoding="utf-8")
           PY
 
-      - name: Prepare corrected project archive
+      - name: Prepare v9 project archive
         run: |
-          rm -f banshar-adel-al-khamri-project-fixed.zip
-          (cd extracted && zip -qr ../banshar-adel-al-khamri-project-fixed.zip .)
-          echo "Created corrected project archive."
+          rm -f banshar-adel-al-khamri-project-v9.zip
+          (cd extracted && zip -qr ../banshar-adel-al-khamri-project-v9.zip .)
+          echo "Created v9 project archive."
 
       - name: Save corrected project to GitHub
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add banshar-adel-al-khamri-project-fixed.zip
-          git commit -m "Fix CustomerActivity build errors [skip ci]" || true
+          git add banshar-adel-al-khamri-project-v9.zip
+          git commit -m "Publish v9 project [skip ci]" || true
           git push
 
       - name: Upload extracted source for inspection
