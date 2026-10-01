@@ -1,6 +1,4 @@
 name: Build APK
-# v13 retry
-
 on:
   workflow_dispatch:
   push:
@@ -12,39 +10,40 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Find latest project ZIP
+      - name: Use the original V8 project
         run: |
-          ZIP=$(for f in $(ls -t banshar-adel-al-khamri-project-v11.zip banshar-adel-al-khamri-project-v10.zip *.zip 2>/dev/null | awk '!seen[$0]++'); do unzip -tq "$f" >/dev/null 2>&1 && { echo "$f"; break; }; done)
-          test -n "$ZIP"
-          mkdir extracted
+          ZIP="banshar-adel-al-khamri-project-v8.zip"
+          test -f "$ZIP"
           unzip -q "$ZIP" -d extracted
           PROJECT_DIR=$(find extracted -name settings.gradle.kts -type f -print -quit | xargs dirname)
           cp -a "$PROJECT_DIR"/. .
 
-      - name: Fix CustomerActivity compile errors
+      - name: Inspect reminder source
+        run: |
+          echo "=== ReminderReceiver.kt ==="
+          sed -n '1,240p' app/src/main/java/com/adel/banshar/ReminderReceiver.kt || true
+          echo "=== ReminderScheduler.kt ==="
+          sed -n '1,240p' app/src/main/java/com/adel/banshar/ReminderScheduler.kt || true
+          echo "=== CustomerActivity reminder references ==="
+          grep -RniE 'موعد|زيت|remind|reminder' app/src/main/java/com/adel/banshar || true
+
+      - name: Fix AlertDialog compile imports only
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p=Path("app/src/main/java/com/adel/banshar/CustomerActivity.kt")
           if p.exists():
               s=p.read_text(encoding="utf-8")
-              if "import android.content.DialogInterface" not in s: s=s.replace("import android.content.Intent","import android.content.DialogInterface\nimport android.content.Intent",1)
-              if "import androidx.appcompat.app.AlertDialog" not in s: s=s.replace("import androidx.appcompat.app.AppCompatActivity","import androidx.appcompat.app.AlertDialog\nimport androidx.appcompat.app.AppCompatActivity",1)
-              s=s.replace('.setPositiveButton("حفظ") { _, _ ->','.setPositiveButton("حفظ") { _: DialogInterface, _: Int ->',1)
+              s=s.replace("import android.app.AlertDialog\n","")
+              if "import androidx.appcompat.app.AlertDialog" not in s:
+                  s=s.replace("import androidx.appcompat.app.AppCompatActivity","import androidx.appcompat.app.AlertDialog\nimport androidx.appcompat.app.AppCompatActivity",1)
               p.write_text(s,encoding="utf-8")
           PY
 
-      - name: Apply v13 service type and backup settings
-        run: |
-          cp v13patch/BackupManager.kt app/src/main/java/com/adel/banshar/BackupManager.kt
-          cp v13patch/BackupScheduler.kt app/src/main/java/com/adel/banshar/BackupScheduler.kt
-          cp v13patch/BackupReceiver.kt app/src/main/java/com/adel/banshar/BackupReceiver.kt
-          python3 v13patch/apply_v13_patch.py
-
-      - name: Upload extracted source for inspection
+      - name: Upload original V8 source for inspection
         uses: actions/upload-artifact@v4
         with:
-          name: extracted-source-inspection
+          name: original-v8-source
           path: extracted
 
       - name: Setup Java
@@ -62,6 +61,7 @@ jobs:
         run: gradle assembleDebug
 
       - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: banshar-adel-al-khamri-apk
