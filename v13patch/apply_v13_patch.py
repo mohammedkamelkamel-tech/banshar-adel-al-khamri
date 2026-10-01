@@ -68,3 +68,15 @@ s=p.read_text(encoding="utf-8")
 if 'REQUEST_RESTORE' not in s:
     s=s.replace('    private fun showList(items: List<Customer>) {','    companion object { const val REQUEST_RESTORE = 9131 }\n\n    private fun showList(items: List<Customer>) {',1)
 p.write_text(s,encoding="utf-8")
+
+
+# Make settings button independent of XML resource generation
+p=root/"app/src/main/java/com/adel/banshar/MainActivity.kt"
+s=p.read_text(encoding="utf-8")
+s=s.replace('findViewById<Button>(R.id.btnSettings).setOnClickListener { backupSettings() }',
+'''val rootLayout=findViewById<LinearLayout>(android.R.id.content).getChildAt(0) as LinearLayout
+        val settingsButton=Button(this).apply{text="⚙️ الإعدادات";setOnClickListener{backupSettings()}}
+        rootLayout.addView(settingsButton,2)''')
+if 'companion object { const val REQUEST_RESTORE' not in s:
+    s=s.replace('    private fun showList(items: List<Customer>) {','    companion object { const val REQUEST_RESTORE = 9131 }\n\n    private fun showList(items: List<Customer>) {',1)
+p.write_text(s,encoding="utf-8")
