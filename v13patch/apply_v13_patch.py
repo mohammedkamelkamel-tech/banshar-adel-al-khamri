@@ -83,7 +83,7 @@ s=s.replace('    private fun createInventoryTables(db: SQLiteDatabase) {', '''  
         ensureColumn(db, "products", "barcode", "TEXT DEFAULT ''")
         ensureColumn(db, "products", "imagePath", "TEXT DEFAULT ''")
         ensureColumn(db, "sales", "customerId", "INTEGER DEFAULT 0")
-        ensureColumn(db, "sales", "paid", "REAL DEFAULT 0)
+        ensureColumn(db, "sales", "paid", "REAL DEFAULT 0")
         ensureColumn(db, "sales", "remaining", "REAL DEFAULT 0")
         createInventoryTables(db)
     }
