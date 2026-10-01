@@ -31,41 +31,39 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
 
           p=Path("app/src/main/java/com/adel/banshar/ReminderReceiver.kt")
           s=p.read_text(encoding="utf-8")
-          old='val msg = "مرحباً \${c.name}، حان موعد تغيير الزيت لسيارتك. بنشر عادل الخامري - فروة. نسعد بخدمتك."'
-          new='''val isMotorcycle = c.vehicle.contains("دراجة") || c.vehicle.contains("دباب") || c.vehicle.contains("نارية") || c.vehicle.contains("موتور") || c.vehicle.contains("موتوسيكل")
+          replacement='''val isMotorcycle = c.vehicle.contains("دراجة") || c.vehicle.contains("دباب") || c.vehicle.contains("نارية") || c.vehicle.contains("موتور") || c.vehicle.contains("موتوسيكل")
           val msg = if (isMotorcycle) {
-              "حان موعد تغيير زيت الدراجة النارية 🛢️🏍️\\nحياكم الله في بنشر عادل الخامري – فروة، ونتشرف بزيارتكم 🌷"
+              "حان موعد تغيير زيت الدراجة النارية 🛢️🏍️\nحياكم الله في بنشر عادل الخامري – فروة، ونتشرف بزيارتكم 🌷"
           } else {
-              "حان موعد تغيير زيت سيارتكم 🛢️🚗\\nحياكم الله في بنشر عادل الخامري – فروة، ونشرف بزيارتكم 🌷"
+              "حان موعد تغيير زيت سيارتكم 🛢️🚗\nحياكم الله في بنشر عادل الخامري – فروة، ونشرف بزيارتكم 🌷"
           }'''
-          if old not in s: raise SystemExit("ReminderReceiver message not found")
-          s=s.replace(old,new,1)
+          s,n=re.subn(r'(?m)^\s*val msg = "مرحباً .*? نسعد بخدمتك\."$', replacement, s, count=1)
+          if n!=1: raise SystemExit("ReminderReceiver message not found")
           p.write_text(s,encoding="utf-8")
 
           p=Path("app/src/main/java/com/adel/banshar/CustomerActivity.kt")
           s=p.read_text(encoding="utf-8")
-          old='private fun reminderMessage()="مرحباً \${name.text}، حان موعد تغيير الزيت لسيارتك. بنشر عادل الخامري - فروة. نسعد بخدمتك."'
-          new='''private fun reminderMessage(): String {
+          replacement='''private fun reminderMessage(): String {
               val v = vehicle.text.toString().trim()
               return if (v.contains("دراجة") || v.contains("دباب") || v.contains("نارية") || v.contains("موتور") || v.contains("موتوسيكل")) {
-                  "حان موعد تغيير زيت الدراجة النارية 🛢️🏍️\\nحياكم الله في بنشر عادل الخامري – فروة، ونتشرف بزيارتكم 🌷"
+                  "حان موعد تغيير زيت الدراجة النارية 🛢️🏍️\nحياكم الله في بنشر عادل الخامري – فروة، ونتشرف بزيارتكم 🌷"
               } else {
-                  "حان موعد تغيير زيت سيارتكم 🛢️🚗\\nحياكم الله في بنشر عادل الخامري – فروة، ونشرف بزيارتكم 🌷"
+                  "حان موعد تغيير زيت سيارتكم 🛢️🚗\nحياكم الله في بنشر عادل الخامري – فروة، ونشرف بزيارتكم 🌷"
               }
           }'''
-          if old not in s: raise SystemExit("CustomerActivity reminder message not found")
-          s=s.replace(old,new,1)
+          s,n=re.subn(r'(?m)^\s*private fun reminderMessage\(\)=.*$', replacement, s, count=1)
+          if n!=1: raise SystemExit("CustomerActivity reminder message not found")
           p.write_text(s,encoding="utf-8")
 
           p=Path("app/build.gradle.kts")
           s=p.read_text(encoding="utf-8")
-          s=s.replace('versionCode = 1','versionCode = 2').replace('versionName = "1.0"','versionName = "1.1.0"')
+          s=s.replace("versionCode = 1","versionCode = 2").replace('versionName = "1.0"','versionName = "1.1.0"')
           p.write_text(s,encoding="utf-8")
           PY
-
       - name: Upload original V8 source for inspection
         uses: actions/upload-artifact@v4
         with:
