@@ -15,11 +15,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Find and extract project ZIP
+      - name: Find latest project ZIP
         run: |
+          ZIP=$(ls -t *.zip | head -n 1)
+          echo "Using ZIP: $ZIP"
           mkdir extracted
-          unzip -q banshar-adel-al-khamri-project.zip -d extracted
-          cp -a extracted/banshar-adel-al-khamri/. .
+          unzip -q "$ZIP" -d extracted
+
+          PROJECT_DIR=$(find extracted -name settings.gradle.kts -type f -print -quit | xargs dirname)
+          echo "Project directory: $PROJECT_DIR"
+
+          cp -a "$PROJECT_DIR"/. .
 
       - name: Setup Java
         uses: actions/setup-java@v4
