@@ -17,7 +17,8 @@ jobs:
 
       - name: Find latest project ZIP
         run: |
-          ZIP=$(ls -t *.zip | head -n 1)
+          ZIP=$(for f in $(ls -t *.zip); do unzip -tq "$f" >/dev/null 2>&1 && { echo "$f"; break; }; done)
+          test -n "$ZIP"
           echo "Using ZIP: $ZIP"
           mkdir extracted
           unzip -q "$ZIP" -d extracted
