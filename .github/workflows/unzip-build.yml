@@ -158,6 +158,23 @@ jobs:
           gradle.write_text(s,encoding="utf-8")
           PY
 
+      - name: Package full project source
+        run: |
+          rm -rf /tmp/banshar-project
+          mkdir -p /tmp/banshar-project
+          cp -a . /tmp/banshar-project/
+          rm -rf /tmp/banshar-project/.git /tmp/banshar-project/.gradle
+          cd /tmp
+          zip -qr banshar-adel-al-khamri-full-project.zip banshar-project
+          cp banshar-adel-al-khamri-full-project.zip "$GITHUB_WORKSPACE/"
+
+      - name: Upload full project source
+        uses: actions/upload-artifact@v4
+        with:
+          name: banshar-adel-al-khamri-full-project
+          path: banshar-adel-al-khamri-full-project.zip
+          retention-days: 90
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
