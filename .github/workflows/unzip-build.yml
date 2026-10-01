@@ -31,24 +31,34 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
+
           paths = [
               Path("extracted/app/src/main/java/com/adel/banshar/CustomerActivity.kt"),
               Path("app/src/main/java/com/adel/banshar/CustomerActivity.kt"),
           ]
+
           for p in paths:
               if not p.exists():
                   continue
               s = p.read_text(encoding="utf-8")
-          if "import android.content.DialogInterface" not in s:
-              s = s.replace("import android.content.Intent", "import android.content.DialogInterface\nimport android.content.Intent", 1)
-          if "import androidx.appcompat.app.AlertDialog" not in s:
-              s = s.replace("import androidx.appcompat.app.AppCompatActivity", "import androidx.appcompat.app.AlertDialog\nimport androidx.appcompat.app.AppCompatActivity", 1)
-          old = '.setPositiveButton("حفظ") { _, _ ->'
-          new = '.setPositiveButton("حفظ") { _: DialogInterface, _: Int ->'
-          if old not in s:
-              raise SystemExit("Expected payDue AlertDialog lambda was not found")
-          s = s.replace(old, new, 1)
-          p.write_text(s, encoding="utf-8")
+              if "import android.content.DialogInterface" not in s:
+                  s = s.replace(
+                      "import android.content.Intent",
+                      "import android.content.DialogInterface\nimport android.content.Intent",
+                      1,
+                  )
+              if "import androidx.appcompat.app.AlertDialog" not in s:
+                  s = s.replace(
+                      "import androidx.appcompat.app.AppCompatActivity",
+                      "import androidx.appcompat.app.AlertDialog\nimport androidx.appcompat.app.AppCompatActivity",
+                      1,
+                  )
+              s = s.replace(
+                  '.setPositiveButton("حفظ") { _, _ ->',
+                  '.setPositiveButton("حفظ") { _: DialogInterface, _: Int ->',
+                  1,
+              )
+              p.write_text(s, encoding="utf-8")
           PY
 
       - name: Prepare corrected project archive
