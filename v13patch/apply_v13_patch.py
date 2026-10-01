@@ -1,13 +1,11 @@
 from pathlib import Path
 root=Path(".")
-
 p=root/"app/src/main/res/layout/activity_main.xml"
 s=p.read_text(encoding="utf-8")
 if 'android:id="@+id/btnSettings"' not in s:
     s=s.replace('<EditText android:id="@+id/search"', '<Button android:id="@+id/btnSettings" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="⚙️ الإعدادات"/>\n<EditText android:id="@+id/search"',1)
 p.write_text(s,encoding="utf-8")
 
-# Keep service type as a sales-only concept; remove the old customer-profile injection if present.
 p=root/"app/src/main/res/layout/activity_customer.xml"
 s=p.read_text(encoding="utf-8")
 s=s.replace('<TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="نوع الخدمة" android:textStyle="bold" android:paddingTop="8dp"/>\n<Spinner android:id="@+id/serviceType" android:layout_width="match_parent" android:layout_height="wrap_content"/>\n','')
@@ -33,8 +31,6 @@ s=s.replace('    private fun createInventoryTables(db: SQLiteDatabase) {', '''  
     }
 
     private fun repairSchema(db: SQLiteDatabase) {
-        // Repair databases created by older builds whose version number was already 6
-        // but whose tables did not yet contain the columns used by the current app.
         ensureColumn(db, "customers", "oilImagePath", "TEXT DEFAULT ''")
         ensureColumn(db, "customers", "serviceType", "TEXT DEFAULT ''")
         ensureColumn(db, "customers", "oilPrice", "REAL DEFAULT 0")
@@ -50,7 +46,6 @@ s=s.replace('    private fun createInventoryTables(db: SQLiteDatabase) {', '''  
         ensureColumn(db, "sales", "paid", "REAL DEFAULT 0")
         ensureColumn(db, "sales", "remaining", "REAL DEFAULT 0")
         createInventoryTables(db)
-        createFinanceTables(db)
     }
 
     private fun createInventoryTables(db: SQLiteDatabase) {''')
@@ -61,7 +56,6 @@ p=root/"app/build.gradle.kts"
 s=p.read_text(encoding="utf-8").replace('versionCode = 1','versionCode = 14').replace('versionName = "1.0"','versionName = "1.4.0"')
 p.write_text(s,encoding="utf-8")
 
-# Defensive startup: show a useful message instead of silently dying if a device has a damaged DB.
 p=root/"app/src/main/java/com/adel/banshar/MainActivity.kt"
 s=p.read_text(encoding="utf-8")
 s=s.replace('        db = Db(this)\n        list = findViewById', '''        try {
