@@ -122,9 +122,9 @@ jobs:
           s=layout.read_text(encoding="utf-8")
           if 'android:id="@+id/btnBackup"' not in s:
               button='<Button android:id="@+id/btnBackup" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="نسخة احتياطية 💾" android:layout_marginTop="8dp" />'
-              pos=s.rfind("</LinearLayout>")
-              if pos<0: raise SystemExit("root LinearLayout closing tag not found")
-              s=s[:pos]+button+chr(10)+s[pos:]
+              marker='<ListView android:id="@+id/listCustomers"'
+              if marker not in s: raise SystemExit("customer list not found")
+              s=s.replace(marker,button+chr(10)+marker,1)
           layout.write_text(s,encoding="utf-8")
 
           main=Path("app/src/main/java/com/adel/banshar/MainActivity.kt")
