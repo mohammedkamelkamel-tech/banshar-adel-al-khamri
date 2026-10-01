@@ -23,17 +23,25 @@ jobs:
           p=Path("app/src/main/res/layout/activity_customer.xml")
           s=p.read_text(encoding="utf-8")
           old='<EditText android:id="@+id/vehicle" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="السيارة / الموديل"/>'
-          new='<Spinner android:id="@+id/vehicleType" android:layout_width="match_parent" android:layout_height="wrap_content"/><EditText android:id="@+id/vehicle" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="الماركة / الموديل"/>'
+          new='''<RadioGroup android:id="@+id/vehicleTypeGroup" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:layoutDirection="rtl">
+          <RadioButton android:id="@+id/vehicleMotorcycle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="دراجة نارية" android:textSize="17sp"/>
+          <RadioButton android:id="@+id/vehicleCar" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="سيارة" android:textSize="17sp"/>
+          </RadioGroup>
+          <EditText android:id="@+id/vehicle" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="الماركة / الموديل"/>'''
           if old not in s: raise SystemExit("vehicle XML not found")
           p.write_text(s.replace(old,new,1),encoding="utf-8")
 
           p=Path("app/src/main/java/com/adel/banshar/CustomerActivity.kt")
           s=p.read_text(encoding="utf-8")
-          s=s.replace("private lateinit var name: EditText; private lateinit var phone: EditText; private lateinit var vehicle: EditText; private lateinit var oilType: EditText","private lateinit var name: EditText; private lateinit var phone: EditText; private lateinit var vehicleType: Spinner; private lateinit var vehicle: EditText; private lateinit var oilType: EditText",1)
-          s=s.replace("name=findViewById(R.id.name); phone=findViewById(R.id.phone); vehicle=findViewById(R.id.vehicle); oilType=findViewById(R.id.oilType);","name=findViewById(R.id.name); phone=findViewById(R.id.phone); vehicleType=findViewById(R.id.vehicleType); vehicle=findViewById(R.id.vehicle); oilType=findViewById(R.id.oilType);",1)
-          s=s.replace("        val daysValue=(days.text.toString().toIntOrNull()?:30).coerceAtLeast(1)","        if(vehicleType.selectedItemPosition<=0){Toast.makeText(this,\"اختر نوع المركبة: سيارة أو دراجة نارية\",Toast.LENGTH_SHORT).show();return}\n        val type=vehicleType.selectedItem.toString().trim()\n        val daysValue=(days.text.toString().toIntOrNull()?:30).coerceAtLeast(1)",1)
+          s=s.replace("private lateinit var name: EditText; private lateinit var phone: EditText; private lateinit var vehicle: EditText; private lateinit var oilType: EditText","private lateinit var name: EditText; private lateinit var phone: EditText; private lateinit var vehicleTypeGroup: RadioGroup; private lateinit var vehicleCar: RadioButton; private lateinit var vehicleMotorcycle: RadioButton; private lateinit var vehicle: EditText; private lateinit var oilType: EditText",1)
+          s=s.replace("name=findViewById(R.id.name); phone=findViewById(R.id.phone); vehicle=findViewById(R.id.vehicle); oilType=findViewById(R.id.oilType);","name=findViewById(R.id.name); phone=findViewById(R.id.phone); vehicleTypeGroup=findViewById(R.id.vehicleTypeGroup); vehicleCar=findViewById(R.id.vehicleCar); vehicleMotorcycle=findViewById(R.id.vehicleMotorcycle); vehicle=findViewById(R.id.vehicle); oilType=findViewById(R.id.oilType);",1)
+
+          s=s.replace("        val daysValue=(days.text.toString().toIntOrNull()?:30).coerceAtLeast(1)","        if(vehicleTypeGroup.checkedRadioButtonId==-1){Toast.makeText(this,\"اختر نوع المركبة: سيارة أو دراجة نارية\",Toast.LENGTH_SHORT).show();return}\n        val type=if(vehicleMotorcycle.isChecked) \"دراجة نارية\" else \"سيارة\"\n        val daysValue=(days.text.toString().toIntOrNull()?:30).coerceAtLeast(1)",1)
           s=s.replace("vehicle=vehicle.text.toString().trim(),","vehicle=if(vehicle.text.toString().trim().isBlank()) type else \"$type - \"+vehicle.text.toString().trim(),",1)
-          s=s.replace("    private fun reminderMessage()=if(vehicleType.selectedItem?.toString()==\"دراجة نارية\") \"حان موعد تغيير زيت الدراجة النارية 🛢️🏍️\\nحياكم الله في بنشر عادل الخامري – فروة، ونتشرف بزيارتكم 🌷\" else \"حان موعد تغيير زيت سيارتكم 🛢️🚗\\nحياكم الله في بنشر عادل الخامري – فروة، ونشرف بزيارتكم 🌷\"","    private fun reminderMessage()=if(vehicleType.selectedItem?.toString()==\"دراجة نارية\") \"حان موعد تغيير زيت الدراجة النارية 🛢️🏍️ - حياكم الله في بنشر عادل الخامري – فروة، ونتشرف بزيارتكم 🌷\" else \"حان موعد تغيير زيت سيارتكم 🛢️🚗 - حياكم الله في بنشر عادل الخامري – فروة، ونشرف بزيارتكم 🌷\"",1)
+
+          s=re.sub(r'    private fun fill\(c:Customer\)\{.*?\}', '    private fun fill(c:Customer){name.setText(c.name);phone.setText(c.phone);val moto=c.vehicle.contains("دراجة نارية")||c.vehicle.contains("دباب")||c.vehicle.contains("نارية")||c.vehicle.contains("موتور")||c.vehicle.contains("موتوسيكل");if(moto) vehicleMotorcycle.isChecked=true else vehicleCar.isChecked=true;vehicle.setText(c.vehicle.removePrefix("دراجة نارية - ").removePrefix("سيارة - "));oilType.setText(c.oilType);days.setText(c.days.toString());oilImagePath=c.oilImagePath;showOilImage();showRemaining()}', s, count=1)
+
+          s=re.sub(r'    private fun reminderMessage\(\)=.*', '    private fun reminderMessage()=if(vehicleMotorcycle.isChecked) "حان موعد تغيير زيت الدراجة النارية 🛢️🏍️ - حياكم الله في بنشر عادل الخامري – فروة، ونتشرف بزيارتكم 🌷" else "حان موعد تغيير زيت سيارتكم 🛢️🚗 - حياكم الله في بنشر عادل الخامري – فروة، ونشرف بزيارتكم 🌷"', s, count=1)
           p.write_text(s,encoding="utf-8")
 
           p=Path("app/src/main/java/com/adel/banshar/ReminderReceiver.kt")
@@ -43,7 +51,7 @@ jobs:
           p.write_text(s,encoding="utf-8")
 
           p=Path("app/build.gradle.kts")
-          s=p.read_text(encoding="utf-8").replace("versionCode = 1","versionCode = 3").replace('versionName = "1.0"','versionName = "1.2.0"')
+          s=p.read_text(encoding="utf-8").replace("versionCode = 1","versionCode = 4").replace('versionName = "1.0"','versionName = "1.3.0"')
           p.write_text(s,encoding="utf-8")
           PY
 
