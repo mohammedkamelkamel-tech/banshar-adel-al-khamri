@@ -1,0 +1,1 @@
+Rebuild APK with startup crash fix and database migration repair.
