@@ -27,12 +27,37 @@ jobs:
 
           cp -a "$PROJECT_DIR"/. .
 
-      - name: Inspect CustomerActivity source
+      - name: Fix CustomerActivity compile errors
         run: |
-          echo "=== CustomerActivity imports ==="
-          sed -n '1,25p' app/src/main/java/com/adel/banshar/CustomerActivity.kt
-          echo "=== CustomerActivity around failing lines ==="
-          nl -ba app/src/main/java/com/adel/banshar/CustomerActivity.kt | sed -n '90,112p'
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("extracted/app/src/main/java/com/adel/banshar/CustomerActivity.kt")
+          s = p.read_text(encoding="utf-8")
+          if "import android.content.DialogInterface" not in s:
+              s = s.replace("import android.content.Intent", "import android.content.DialogInterface\nimport android.content.Intent", 1)
+          if "import androidx.appcompat.app.AlertDialog" not in s:
+              s = s.replace("import androidx.appcompat.app.AppCompatActivity", "import androidx.appcompat.app.AlertDialog\nimport androidx.appcompat.app.AppCompatActivity", 1)
+          old = '.setPositiveButton("حفظ") { _, _ ->'
+          new = '.setPositiveButton("حفظ") { _: DialogInterface, _: Int ->'
+          if old not in s:
+              raise SystemExit("Expected payDue AlertDialog lambda was not found")
+          s = s.replace(old, new, 1)
+          p.write_text(s, encoding="utf-8")
+          PY
+
+      - name: Prepare corrected project archive
+        run: |
+          rm -f banshar-adel-al-khamri-project-fixed.zip
+          (cd extracted && zip -qr ../banshar-adel-al-khamri-project-fixed.zip .)
+          echo "Created corrected project archive."
+
+      - name: Save corrected project to GitHub
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add banshar-adel-al-khamri-project-fixed.zip
+          git commit -m "Fix CustomerActivity build errors [skip ci]" || true
+          git push
 
       - name: Setup Java
         uses: actions/setup-java@v4
