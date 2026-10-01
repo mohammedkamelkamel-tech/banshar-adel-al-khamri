@@ -121,12 +121,31 @@ jobs:
           layout=Path("app/src/main/res/layout/activity_main.xml")
           s=layout.read_text(encoding="utf-8")
           if 'android:id="@+id/btnBackup"' not in s:
-              button='<Button android:id="@+id/btnBackup" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="نسخة احتياطية 💾"/>'
-              marker='<EditText android:id="@+id/search"'
-              if marker not in s: raise SystemExit("search field not found")
-              s=s.replace(marker,button+chr(10)+marker,1)
+              button='<Button android:id="@+id/btnBackup" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="نسخة احتياطية 💾" android:layout_marginTop="8dp" />'
+              pos=s.rfind("</LinearLayout>")
+              if pos<0: raise SystemExit("root LinearLayout closing tag not found")
+              s=s[:pos]+button+chr(10)+s[pos:]
           layout.write_text(s,encoding="utf-8")
 
+          main=Path("app/src/main/java/com/adel/banshar/MainActivity.kt")
+          s=main.read_text(encoding="utf-8")
+          if "R.id.btnBackup" not in s:
+              marker='        findViewById<Button>(R.id.btnInventory).setOnClickListener { startActivity(Intent(this, InventoryActivity::class.java)) }'
+              handler='''        findViewById<Button>(R.id.btnBackup).setOnClickListener {
+              val uri = BackupManager.createBackup(this)
+              Toast.makeText(this, if (uri != null) "تم إنشاء النسخة الاحتياطية في التنزيلات" else "تعذر إنشاء النسخة الاحتياطية", Toast.LENGTH_LONG).show()
+          }'''
+              if marker not in s: raise SystemExit("inventory listener not found")
+              s=s.replace(marker,marker+chr(10)+handler,1)
+          if "BackupScheduler.schedule(this)" not in s:
+              s=s.replace("        setContentView(R.layout.activity_main)", "        setContentView(R.layout.activity_main)"+chr(10)+"        BackupScheduler.schedule(this)",1)
+          main.write_text(s,encoding="utf-8")
+
+          manifest=Path("app/src/main/AndroidManifest.xml")
+          s=manifest.read_text(encoding="utf-8")
+          if "android.permission.RECEIVE_BOOT_COMPLETED" not in s:
+              s=s.replace("<application", '<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />'+chr(10)+"    <application",1)
+          manifest.write_text(s,encoding="utf-8")
           manifest=Path("app/src/main/AndroidManifest.xml")
           s=manifest.read_text(encoding="utf-8")
           s=s.replace('<receiver android:name=".ReminderReceiver" android:exported="false" />','<receiver android:name=".ReminderReceiver" android:exported="false" />'+chr(10)+'        <receiver android:name=".BackupReceiver" android:exported="false">
