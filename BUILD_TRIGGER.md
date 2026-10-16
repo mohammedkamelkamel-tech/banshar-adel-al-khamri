@@ -11,3 +11,5 @@ Rebuild after replacing SQLite cursor schema helper with explicit cursor close.
 Rebuild to inspect exact generated Db.kt compilation failure.
 
 Rebuild after correcting addStock Kotlin precedence error.
+
+Rebuild after adding ZIP backup restoration button and restore handler.
