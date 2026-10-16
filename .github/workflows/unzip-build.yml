@@ -172,6 +172,85 @@ jobs:
           '''
           layout.write_text(xml,encoding="utf-8")
 
+          # Add restore-from-ZIP support and a separate restore button.
+          backup_path=Path("app/src/main/java/com/adel/banshar/BackupManager.kt")
+          bs=backup_path.read_text(encoding="utf-8")
+          restore_method='''    fun restoreBackup(context: Context, uri: Uri): Boolean {
+                  return try {
+                      val target = context.getDatabasePath("banshar.db")
+                      target.parentFile?.mkdirs()
+                      File(context.getDatabasePath("banshar.db-wal").absolutePath).delete()
+                      File(context.getDatabasePath("banshar.db-shm").absolutePath).delete()
+                      var restored = false
+                      context.contentResolver.openInputStream(uri)?.use { input ->
+                          java.util.zip.ZipInputStream(input).use { zip ->
+                              var entry = zip.nextEntry
+                              while (entry != null) {
+                                  if (entry.name == "banshar.db") {
+                                      FileOutputStream(target).use { output -> zip.copyTo(output) }
+                                      restored = true
+                                  }
+                                  zip.closeEntry()
+                                  entry = zip.nextEntry
+                              }
+                          }
+                      }
+                      restored
+                  } catch (_: Exception) { false }
+              }
+
+          '''
+          if "fun restoreBackup(context: Context, uri: Uri)" not in bs:
+              bs=bs.replace("    private fun addFile(zip: ZipOutputStream", restore_method+"    private fun addFile(zip: ZipOutputStream",1)
+          backup_path.write_text(bs,encoding="utf-8")
+
+          layout=Path("app/src/main/res/layout/activity_main.xml")
+          xs=layout.read_text(encoding="utf-8")
+          backup_button='''<Button android:id="@+id/btnBackup" android:layout_width="match_parent" android:layout_height="wrap_content"
+                  android:layout_marginTop="4dp" android:text="نسخة احتياطية 💾"
+                  android:backgroundTint="#FF9F1C" android:textColor="#0B1220"/>'''
+          restore_button=backup_button+'''\n              <Button android:id="@+id/btnRestore" android:layout_width="match_parent" android:layout_height="wrap_content"
+                  android:layout_marginTop="4dp" android:text="استعادة نسخة احتياطية 📂"
+                  android:backgroundTint="#253752" android:textColor="#FFFFFF"/>'''
+          if 'android:id="@+id/btnRestore"' not in xs:
+              if backup_button not in xs: raise SystemExit("Could not locate backup button in generated layout")
+              xs=xs.replace(backup_button,restore_button,1)
+              layout.write_text(xs,encoding="utf-8")
+
+          main=Path("app/src/main/java/com/adel/banshar/MainActivity.kt")
+          ms=main.read_text(encoding="utf-8")
+          restore_listener='''        findViewById<Button>(R.id.btnRestore).setOnClickListener {
+              val pick = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                  addCategory(Intent.CATEGORY_OPENABLE)
+                  type = "application/zip"
+              }
+              startActivityForResult(pick, 8102)
+          }
+
+          '''
+          if 'findViewById<Button>(R.id.btnRestore)' not in ms:
+              insertion='        BackupScheduler.schedule(this)'
+              if insertion in ms: ms=ms.replace(insertion,insertion+"\\n"+restore_listener.rstrip(),1)
+              else: raise SystemExit("Could not locate MainActivity initialization to add restore listener")
+          if 'override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?)' not in ms:
+              handler='''
+              override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+                  super.onActivityResult(requestCode, resultCode, data)
+                  if (requestCode == 8102 && resultCode == RESULT_OK) {
+                      val uri = data?.data ?: return
+                      db.close()
+                      val restored = BackupManager.restoreBackup(this, uri)
+                      db = Db(this)
+                      Toast.makeText(this, if (restored) "تمت استعادة النسخة الاحتياطية" else "تعذرت الاستعادة: اختر ملف نسخة ZIP صحيحًا", Toast.LENGTH_LONG).show()
+                      if (restored) recreate()
+                  }
+              }
+          '''
+              idx=ms.rfind("}")
+              if idx < 0: raise SystemExit("Could not locate MainActivity closing brace")
+              ms=ms[:idx]+handler+ms[idx:]
+          main.write_text(ms,encoding="utf-8")
+
           manifest=Path("app/src/main/AndroidManifest.xml")
           s=manifest.read_text(encoding="utf-8")
           if "android.permission.RECEIVE_BOOT_COMPLETED" not in s:
