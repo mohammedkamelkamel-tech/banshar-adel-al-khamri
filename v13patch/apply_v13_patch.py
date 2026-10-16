@@ -104,6 +104,29 @@ s=s.replace('        if (oldVersion < 6) createFinanceTables(db)\n', '        if
 import re
 s = re.sub(r'if\s*\(c\.getString\(1\)\s*==\s*column\)\s*return', 'if (c.getString(1) == column) { exists = true; break }', s)
 s = s.replace('if (c.getString(1) == column) return', 'if (c.getString(1) == column) { exists = true; break }')
+# Normalize the schema helper to avoid Kotlin SQLite cursor inference issues.
+start = s.find("    private fun ensureColumn(")
+end = s.find("    private fun createInventoryTables(", start)
+if start >= 0 and end > start:
+    s = s[:start] + """    private fun ensureColumn(db: SQLiteDatabase, table: String, column: String, definition: String) {
+        val cursor = db.rawQuery("PRAGMA table_info($table)", null)
+        var exists = false
+        try {
+            while (cursor.moveToNext()) {
+                if (cursor.getString(1) == column) {
+                    exists = true
+                    break
+                }
+            }
+        } finally {
+            cursor.close()
+        }
+        if (exists == false) {
+            db.execSQL("ALTER TABLE $table ADD COLUMN $column $definition")
+        }
+    }
+
+""" + s[end:]
 p.write_text(s,encoding="utf-8")
 
 p=root/"app/build.gradle.kts"
