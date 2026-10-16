@@ -11,9 +11,10 @@ jobs:
         uses: actions/checkout@v4
       - name: Use original V8 project
         run: |
-          unzip -q banshar-adel-al-khamri-project-v8.zip -d extracted
+          unzip -q banshar-adel-al-khamri-project-v10.zip -d extracted
           PROJECT_DIR=$(find extracted -name settings.gradle.kts -type f -print -quit | xargs dirname)
           cp -a "$PROJECT_DIR"/. .
+          python3 v13patch/apply_v13_patch.py
       - name: Add automatic and manual backup
         run: |
           python3 - <<'PY'
@@ -122,24 +123,43 @@ jobs:
           xml='''<?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent" android:layout_height="match_parent"
-              android:orientation="vertical" android:padding="12dp" android:layoutDirection="rtl">
-              <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                  android:text="بنشر عادل الخامري" android:textSize="25sp" android:textStyle="bold"
-                  android:gravity="center" android:padding="10dp"/>
+              android:orientation="vertical" android:padding="14dp" android:layoutDirection="rtl"
+              android:background="#0B1220">
+              <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                  android:orientation="vertical" android:padding="18dp" android:background="#17243A">
+                  <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                      android:text="بنشر عادل الخامري" android:textColor="#FF9F1C" android:textSize="27sp"
+                      android:textStyle="bold" android:gravity="center" android:padding="6dp"/>
+                  <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                      android:text="خدمة سريعة • متابعة العملاء • تغيير الزيت" android:textColor="#D8E1EF"
+                      android:textSize="13sp" android:gravity="center"/>
+              </LinearLayout>
+              <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                  android:orientation="horizontal" android:layout_marginTop="10dp">
+                  <Button android:id="@+id/btnAdd" android:layout_width="0dp" android:layout_height="wrap_content"
+                      android:layout_weight="1" android:text="إضافة عميل" android:backgroundTint="#FF9F1C" android:textColor="#0B1220"/>
+                  <Button android:id="@+id/btnInventory" android:layout_width="0dp" android:layout_height="wrap_content"
+                      android:layout_weight="1" android:text="المخزون" android:backgroundTint="#253752" android:textColor="#FFFFFF"/>
+              </LinearLayout>
               <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
-                  <Button android:id="@+id/btnAdd" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="إضافة عميل"/>
-                  <Button android:id="@+id/btnInventory" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="المخزون"/>
-                  <Button android:id="@+id/btnDue" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="المستحقات"/>
-                  <Button android:id="@+id/btnAll" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="الكل"/>
+                  <Button android:id="@+id/btnDue" android:layout_width="0dp" android:layout_height="wrap_content"
+                      android:layout_weight="1" android:text="المستحقات" android:backgroundTint="#253752" android:textColor="#FFFFFF"/>
+                  <Button android:id="@+id/btnAll" android:layout_width="0dp" android:layout_height="wrap_content"
+                      android:layout_weight="1" android:text="كل العملاء" android:backgroundTint="#253752" android:textColor="#FFFFFF"/>
               </LinearLayout>
               <Button android:id="@+id/btnBackup" android:layout_width="match_parent" android:layout_height="wrap_content"
-                  android:layout_marginTop="8dp" android:text="نسخة احتياطية 💾"/>
+                  android:layout_marginTop="4dp" android:text="نسخة احتياطية 💾"
+                  android:backgroundTint="#FF9F1C" android:textColor="#0B1220"/>
               <EditText android:id="@+id/search" android:layout_width="match_parent" android:layout_height="wrap_content"
-                  android:hint="بحث باسم العميل أو رقم الهاتف" android:inputType="text" android:singleLine="true"/>
+                  android:layout_marginTop="8dp" android:hint="بحث باسم العميل أو رقم الهاتف"
+                  android:inputType="text" android:singleLine="true" android:textColor="#FFFFFF"
+                  android:textColorHint="#9BAAC0" android:backgroundTint="#FF9F1C"/>
               <TextView android:id="@+id/tvSummary" android:layout_width="match_parent" android:layout_height="wrap_content"
-                  android:padding="8dp" android:textSize="16sp"/>
+                  android:padding="12dp" android:layout_marginTop="6dp" android:textColor="#FFFFFF"
+                  android:textSize="16sp" android:background="#17243A"/>
               <ListView android:id="@+id/listCustomers" android:layout_width="match_parent" android:layout_height="0dp"
-                  android:layout_weight="1" android:dividerHeight="8dp"/>
+                  android:layout_marginTop="8dp" android:layout_weight="1" android:divider="#33445E"
+                  android:dividerHeight="1dp" android:background="#111C2E"/>
           </LinearLayout>
           '''
           layout.write_text(xml,encoding="utf-8")
