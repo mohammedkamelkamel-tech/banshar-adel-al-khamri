@@ -251,6 +251,21 @@ jobs:
               ms=ms[:idx]+handler+ms[idx:]
           main.write_text(ms,encoding="utf-8")
 
+          # Install the provided gold-and-navy workshop logo as the Android launcher icon.
+          python3 - <<'ICONPY'
+          import base64
+          from pathlib import Path
+          logo = base64.b64decode("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")
+          res = Path("app/src/main/res")
+          (res / "drawable-nodpi").mkdir(parents=True, exist_ok=True)
+          (res / "drawable-nodpi/banshar_logo.jpg").write_bytes(logo)
+          manifest = res.parent / "AndroidManifest.xml"
+          ms = manifest.read_text(encoding="utf-8")
+          ms = ms.replace('android:icon="@mipmap/ic_launcher"', 'android:icon="@drawable/banshar_logo"')
+          ms = ms.replace('android:roundIcon="@mipmap/ic_launcher_round"', 'android:roundIcon="@drawable/banshar_logo"')
+          manifest.write_text(ms, encoding="utf-8")
+          ICONPY
+
           manifest=Path("app/src/main/AndroidManifest.xml")
           s=manifest.read_text(encoding="utf-8")
           if "android.permission.RECEIVE_BOOT_COMPLETED" not in s:
