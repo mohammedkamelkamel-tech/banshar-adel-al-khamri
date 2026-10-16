@@ -100,6 +100,10 @@ s=s.replace('    private fun createInventoryTables(db: SQLiteDatabase) {', '''  
 
     private fun createInventoryTables(db: SQLiteDatabase) {''')
 s=s.replace('        if (oldVersion < 6) createFinanceTables(db)\n', '        if (oldVersion < 6) createFinanceTables(db)\n        if (oldVersion < 7) repairSchema(db)\n')
+# Avoid non-local returns from SQLite cursor lambdas; these are inferred as Int by Kotlin.
+import re
+s = re.sub(r'if\s*\(c\.getString\(1\)\s*==\s*column\)\s*return', 'if (c.getString(1) == column) { exists = true; break }', s)
+s = s.replace('if (c.getString(1) == column) return', 'if (c.getString(1) == column) { exists = true; break }')
 p.write_text(s,encoding="utf-8")
 
 p=root/"app/build.gradle.kts"
