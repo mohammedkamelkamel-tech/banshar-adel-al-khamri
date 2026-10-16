@@ -127,6 +127,11 @@ if start >= 0 and end > start:
     }
 
 """ + s[end:]
+# Fix Kotlin precedence in addStock: 0.also{} was parsed as an Int condition.
+s = s.replace(
+    'fun addStock(id:Long,qty:Double)=qty>0.also{if(it)writableDatabase.execSQL("UPDATE products SET quantity=quantity+? WHERE id=?",arrayOf(qty,id))}',
+    'fun addStock(id:Long,qty:Double):Boolean { if (qty <= 0) return false; writableDatabase.execSQL("UPDATE products SET quantity=quantity+? WHERE id=?", arrayOf(qty,id)); return true }'
+)
 p.write_text(s,encoding="utf-8")
 
 p=root/"app/build.gradle.kts"
