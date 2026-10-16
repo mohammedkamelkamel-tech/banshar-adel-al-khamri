@@ -5,3 +5,5 @@ Build requested after updating the workshop home screen and applying the latest 
 Retry build after fixing Kotlin migration and dashboard layout IDs.
 
 Rebuild after robust SQLite cursor compile fix.
+
+Rebuild after replacing SQLite cursor schema helper with explicit cursor close.
