@@ -147,6 +147,14 @@ jobs:
                   <Button android:id="@+id/btnAll" android:layout_width="0dp" android:layout_height="wrap_content"
                       android:layout_weight="1" android:text="كل العملاء" android:backgroundTint="#253752" android:textColor="#FFFFFF"/>
               </LinearLayout>
+              <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                  <Button android:id="@+id/btnSale" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="بيع" android:backgroundTint="#253752" android:textColor="#FFFFFF"/>
+                  <Button android:id="@+id/btnToday" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="مبيعات اليوم" android:backgroundTint="#253752" android:textColor="#FFFFFF"/>
+              </LinearLayout>
+              <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                  <Button android:id="@+id/btnGeneral" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="التقرير العام" android:backgroundTint="#253752" android:textColor="#FFFFFF"/>
+                  <Button android:id="@+id/btnExpenses" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="المصروفات" android:backgroundTint="#253752" android:textColor="#FFFFFF"/>
+              </LinearLayout>
               <Button android:id="@+id/btnBackup" android:layout_width="match_parent" android:layout_height="wrap_content"
                   android:layout_marginTop="4dp" android:text="نسخة احتياطية 💾"
                   android:backgroundTint="#FF9F1C" android:textColor="#0B1220"/>
