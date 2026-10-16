@@ -15,3 +15,5 @@ Rebuild after correcting addStock Kotlin precedence error.
 Rebuild after adding ZIP backup restoration button and restore handler.
 
 Rebuild after fixing restore handler patch formatting.
+
+Rebuild after correcting launcher icon generation step.
