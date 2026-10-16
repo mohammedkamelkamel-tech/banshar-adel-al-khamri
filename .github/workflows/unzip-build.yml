@@ -230,7 +230,7 @@ jobs:
           '''
           if 'findViewById<Button>(R.id.btnRestore)' not in ms:
               insertion='        BackupScheduler.schedule(this)'
-              if insertion in ms: ms=ms.replace(insertion,insertion+"\\n"+restore_listener.rstrip(),1)
+              if insertion in ms: ms=ms.replace(insertion,insertion+"\n"+restore_listener.rstrip(),1)
               else: raise SystemExit("Could not locate MainActivity initialization to add restore listener")
           if 'override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?)' not in ms:
               handler='''
