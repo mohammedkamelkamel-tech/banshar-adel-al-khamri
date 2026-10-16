@@ -68,10 +68,16 @@ p=root/"app/src/main/java/com/adel/banshar/Db.kt"
 s=p.read_text(encoding="utf-8")
 s=s.replace('SQLiteOpenHelper(context, "banshar.db", null, 6)', 'SQLiteOpenHelper(context, "banshar.db", null, 7)')
 s=s.replace('    private fun createInventoryTables(db: SQLiteDatabase) {', '''    private fun ensureColumn(db: SQLiteDatabase, table: String, column: String, definition: String) {
+        var exists = false
         db.rawQuery("PRAGMA table_info($table)", null).use { c ->
-            while (c.moveToNext()) if (c.getString(1) == column) return
+            while (c.moveToNext()) {
+                if (c.getString(1) == column) {
+                    exists = true
+                    break
+                }
+            }
         }
-        db.execSQL("ALTER TABLE $table ADD COLUMN $column $definition")
+        if (!exists) db.execSQL("ALTER TABLE $table ADD COLUMN $column $definition")
     }
 
     private fun repairSchema(db: SQLiteDatabase) {
